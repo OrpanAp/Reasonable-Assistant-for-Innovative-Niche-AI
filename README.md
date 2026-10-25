@@ -401,7 +401,7 @@ Changes involving agent tools, command execution, or network behavior should inc
 
 ## 📄 License
 
-No `LICENSE` file was identified during this README review. Until a license is added, do not assume the code is available for unrestricted reuse. If you intend to publish the project for reuse or accept outside contributions, add an appropriate license.
+No `LICENSE` & until a license is added, do not assume the code is available for unrestricted reuse.
 
 ---
 
