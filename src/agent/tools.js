@@ -104,6 +104,9 @@ function htmlToText(html, baseUrl) {
 }
 
 function createRegistry(cfg) {
+  if (typeof publicFetch !== 'function') {
+    throw new Error('R.A.I.N. files are out of sync: src/agent/tools.js needs the newer src/netguard.js (it must export publicFetch). Copy every file from the latest zip, including src/netguard.js, then restart.');
+  }
   const root = path.resolve(cfg.workspaceDir);
   fs.mkdirSync(root, { recursive: true });
   const tools = new Map();

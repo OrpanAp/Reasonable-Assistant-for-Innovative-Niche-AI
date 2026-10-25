@@ -572,7 +572,16 @@
   function updateAgentNote() {
     if (!agentNote) return;
     agentNote.replaceChildren();
-    if (!agentBox.checked) { agentNote.hidden = true; return; }
+    if (!agentBox.checked) {
+      // Online mode only changes what the Agent can do; plain chat never leaves your machine.
+      if (document.body.dataset.net !== 'online') { agentNote.hidden = true; return; }
+      agentNote.hidden = false;
+      agentNote.append(icon('globe'), el('span', null, 'Online mode only affects Agent. Plain chat never goes online.'));
+      const on = el('button', 'pill-btn', 'Turn on Agent'); on.type = 'button';
+      on.addEventListener('click', () => { agentBox.checked = true; persistAgent(); updateAgentNote(); input.focus(); });
+      agentNote.appendChild(on);
+      return;
+    }
     agentNote.hidden = false;
     if (document.body.dataset.net === 'online') {
       agentNote.append(icon('globe'), el('span', null, 'Agent can work in its workspace and read public web pages. You approve every write, command and page fetch.'));

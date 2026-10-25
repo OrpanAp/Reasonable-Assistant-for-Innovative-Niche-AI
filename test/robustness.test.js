@@ -142,3 +142,38 @@ test('fetch_url output includes followable links end to end', async () => {
 test('default step budget leaves room for write, run, fix, re-run and summarise', () => {
   assert.ok(mkcfg().agentMaxSteps >= 10);
 });
+
+test('a malformed tool-call attempt is retried instead of being shown as the answer', async () => {
+  // Real small-model output: broken JSON (missing colon after "parameters"), a path outside the workspace.
+  const garbage = '{"name":"write_file","parameters{"content":"I can improve.","path":"../models/RAI.json"}}';
+  const seenByModel = [];
+  const provider = { complete: async ({ messages }) => {
+    seenByModel.push(messages.at(-1).content);
+    return seenByModel.length === 1 ? reply(garbage) : reply('You can improve me with better prompts and a larger model.');
+  } };
+  const events = await run(mkcfg(), 'offline', provider);
+  assert.equal(events.filter((e) => e.type === 'tool_call').length, 0);              // nothing executed
+  assert.match(seenByModel[1], /not valid JSON/);                                     // model was told what went wrong
+  const answer = events.find((e) => e.delta).delta;
+  assert.match(answer, /larger model/);
+  assert.doesNotMatch(answer, /parameters\{/);                                        // the garbage never reaches the user
+});
+
+test('a model that keeps producing broken tool calls gets a clear message, not raw JSON', async () => {
+  const provider = { complete: async () => reply('{"tool":"read_file","args{"path":"x"}}') };
+  const events = await run(mkcfg(), 'offline', provider);
+  const answer = events.find((e) => e.delta).delta;
+  assert.match(answer, /malformed tool calls/);
+  assert.doesNotMatch(answer, /read_file/);
+});
+
+test('ordinary answers that merely mention a tool or a name are not treated as tool calls', async () => {
+  const text = 'I can use read_file to open files. My name is R.A.I.N. and the "name" field is optional.';
+  const events = await run(mkcfg(), 'offline', script([reply(text)]));
+  assert.equal(events.find((e) => e.delta).delta, text);
+});
+
+test('install consistency: src/netguard.js exports what src/agent/tools.js imports', () => {
+  assert.equal(typeof require('../src/netguard').publicFetch, 'function');
+  assert.equal(typeof require('../src/netguard').guardedFetch, 'function');
+});
