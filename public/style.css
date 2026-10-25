@@ -1,0 +1,48 @@
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --text: #1b1f24; --muted: #5d6671; --border: #d8dde3;
+  --accent: #2f6fed; --accent-text: #ffffff; --user: #e6eeff; --bot: #ffffff; --err: #b3261e; --ok: #1a7f37;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #111418; --panel: #1a1f25; --text: #e8ebef; --muted: #98a2ae; --border: #2c343d;
+          --accent: #6b9bff; --accent-text: #0b1220; --user: #22304d; --bot: #1a1f25; --err: #ff8a80; --ok: #56d364; }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  display: flex; flex-direction: column; height: 100dvh; background: var(--bg); color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+header { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between;
+         padding: .6rem 1rem; background: var(--panel); border-bottom: 1px solid var(--border); }
+h1 { font-size: 1.1rem; margin: 0; letter-spacing: .08em; }
+.controls { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.status { font-size: .85rem; color: var(--muted); }
+.status.ok { color: var(--ok); } .status.bad { color: var(--err); }
+select, button, textarea { font: inherit; color: inherit; }
+select, button { padding: .4rem .7rem; border: 1px solid var(--border); border-radius: .5rem; background: var(--panel); min-height: 2.5rem; }
+button { cursor: pointer; }
+button[type=submit] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+#log { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: .75rem; }
+.msg { max-width: min(48rem, 92%); padding: .6rem .85rem; border-radius: .9rem; border: 1px solid var(--border);
+       white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.user { align-self: flex-end; background: var(--user); }
+.msg.assistant { align-self: flex-start; background: var(--bot); }
+.msg.pending { color: var(--muted); }
+.empty { margin: auto; color: var(--muted); text-align: center; }
+.error { margin: 0 1rem .5rem; padding: .5rem .75rem; border: 1px solid var(--err); color: var(--err); border-radius: .5rem; }
+form { display: flex; gap: .5rem; padding: .75rem 1rem; background: var(--panel); border-top: 1px solid var(--border); align-items: flex-end; }
+textarea { flex: 1; resize: none; max-height: 10rem; padding: .5rem .7rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--bg); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 480px) { header { padding: .5rem .75rem; } .msg { max-width: 96%; } }
+@media (prefers-reduced-motion: no-preference) { .msg { animation: in .15s ease-out; } @keyframes in { from { opacity: 0; transform: translateY(4px); } } }
+.agent-toggle { display: inline-flex; align-items: center; gap: .35rem; font-size: .9rem; min-height: 2.5rem; }
+.msg.tool { align-self: stretch; max-width: 100%; font-size: .9rem; background: var(--panel); }
+.msg.tool summary { cursor: pointer; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.msg.tool pre { margin: .4rem 0 0; padding: .5rem; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--bg); border-radius: .4rem; max-height: 16rem; overflow-y: auto; }
+.msg.tool.failed summary { color: var(--err); }
+.msg.approval { align-self: stretch; max-width: 100%; border-color: var(--accent); }
+.msg.approval .row { display: flex; gap: .5rem; margin-top: .5rem; flex-wrap: wrap; }

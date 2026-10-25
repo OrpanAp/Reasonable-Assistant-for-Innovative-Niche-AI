@@ -1,0 +1,8 @@
+{
+  "name": "rain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "R.A.I.N. Phase 1 - zero-dependency local-first chat platform",
+  "engines": { "node": ">=18" },
+  "scripts": { "start": "node src/server.js", "test": "node --test" }
+}

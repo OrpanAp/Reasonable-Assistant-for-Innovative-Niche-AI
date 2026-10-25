@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>R.A.I.N.</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>R.A.I.N.</h1>
+    <div class="controls">
+      <span id="status" class="status" role="status" aria-live="polite">Checking…</span>
+      <label class="sr-only" for="mode">Network mode</label>
+      <select id="mode">
+        <option value="offline">Offline (no network)</option>
+        <option value="online">Online (network allowed)</option>
+      </select>
+      <label class="agent-toggle"><input type="checkbox" id="agent"> Agent (tools)</label>
+      <button id="clear" type="button">New chat</button>
+    </div>
+  </header>
+  <main id="log" aria-live="polite" aria-label="Conversation"></main>
+  <div id="error" class="error" role="alert" hidden></div>
+  <form id="form" autocomplete="off">
+    <label class="sr-only" for="input">Message</label>
+    <textarea id="input" rows="1" maxlength="8000" placeholder="Message R.A.I.N. (Enter to send, Shift+Enter for a new line)"></textarea>
+    <button id="send" type="submit">Send</button>
+    <button id="stop" type="button" hidden>Stop</button>
+  </form>
+  <script src="/app.js"></script>
+</body>
+</html>
