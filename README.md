@@ -1,150 +1,176 @@
-# R.A.I.N.
-### Reasonable Assistant for Innovative Niche AI
+<!-- R.A.I.N. repository presentation -->
+<p align="center">
+  <img src="assets/rain-banner.svg" alt="R.A.I.N. — Reasonable Assistant for Innovative Niche AI" width="100%" />
+</p>
 
-**A local-first AI chat assistant with an optional, approval-driven coding agent.** Run an OpenAI-compatible local model, chat through a lightweight browser interface, and optionally let the agent inspect, create, and execute code inside a dedicated workspace.
+<p align="center">
+  <strong>A local-first AI workspace for conversation, code exploration, and human-approved actions.</strong>
+  <br />
+  Bring your own local model. Keep the workflow transparent. Stay in control.
+</p>
 
-R.A.I.N. is built with Node.js core modules and browser-native technologies. The application itself has **zero npm runtime dependencies** and does not require a hosted AI API key.
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white" alt="Node.js 18 or newer" />
+  <img src="https://img.shields.io/badge/Runtime%20dependencies-0-0f766e" alt="Zero runtime dependencies" />
+  <img src="https://img.shields.io/badge/Model-OpenAI--compatible%20API-6366f1" alt="OpenAI-compatible model API" />
+  <img src="https://img.shields.io/badge/Mode-Local--first-0891b2" alt="Local-first" />
+</p>
 
-> **Project status:** The repository includes the core chat experience and a tool-using coding-agent mode. It is an independent project; model quality, tool support, and response speed depend on the local model runtime and model you configure.
+<p align="center">
+  <a href="#-overview">Overview</a> ·
+  <a href="#-key-capabilities">Capabilities</a> ·
+  <a href="#-get-started">Get started</a> ·
+  <a href="#-agent-workspace">Agent workspace</a> ·
+  <a href="#-security-model">Security</a> ·
+  <a href="#-api-reference">API</a>
+</p>
 
 ---
 
-## At a glance
+## ✦ Overview
 
-- **Local-model support** — connect to an OpenAI-style chat-completions endpoint such as Ollama, llama.cpp's `llama-server`, or LM Studio.
-- **Streaming chat** — receive responses incrementally in the browser.
-- **Offline-first network policy** — offline mode blocks R.A.I.N.'s own outbound requests to non-loopback hosts.
-- **Optional coding agent** — list and read workspace files, write files, and run allow-listed programs.
-- **Human approval gates** — file writes and command execution require approval by default.
-- **Workspace path checks** — reject traversal and symlink escapes from the configured workspace.
-- **Guardrails for local execution** — command allow-list, execution timeout, output limits, and a reduced child-process environment.
-- **Lightweight stack** — Node.js built-ins, plain HTML/CSS/JavaScript, and Node's built-in test runner.
+**R.A.I.N.** stands for **Reasonable Assistant for Innovative Niche AI**. It is an independent, local-first AI assistant built with Node.js core modules and browser-native technologies. It combines a lightweight chat interface with an optional coding-agent workflow that can inspect a workspace, propose file changes, and run selected commands after approval.
 
-## Contents
+R.A.I.N. connects to an **OpenAI-compatible model endpoint**—for example, a local server provided by Ollama, llama.cpp, or LM Studio. It does not bundle a model, require a hosted AI API key, or add third-party npm runtime dependencies.
 
-- [How it works](#how-it-works)
-- [Requirements](#requirements)
-- [Quick start](#quick-start)
-- [Configure your model](#configure-your-model)
-- [Using R.A.I.N.](#using-rain)
-- [Coding agent and tools](#coding-agent-and-tools)
-- [Configuration reference](#configuration-reference)
-- [HTTP API](#http-api)
-- [Project structure](#project-structure)
-- [Tests](#tests)
-- [Security model and limitations](#security-model-and-limitations)
-- [Troubleshooting](#troubleshooting)
-- [Roadmap ideas](#roadmap-ideas)
-- [Contributing](#contributing)
-- [License](#license)
+> **Design principle:** useful assistance should remain inspectable. R.A.I.N. makes tool activity visible and keeps approval in the loop for file writes and command execution by default.
 
-## How it works
+### Project snapshot
+
+| | |
+|---|---|
+| **Application** | Browser-based AI chat and optional coding agent |
+| **Runtime** | Node.js 18+ |
+| **Model interface** | OpenAI-compatible chat-completions API |
+| **Frontend** | HTML, CSS, and vanilla JavaScript |
+| **Runtime dependencies** | None beyond Node.js built-ins |
+| **Default network mode** | Offline |
+| **Default bind address** | `127.0.0.1` |
+| **Testing** | Node.js built-in test runner |
+
+## ✧ Key capabilities
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>◈ Local-model chat</strong><br />
+      Connect to a compatible model endpoint and stream responses into the browser UI.
+    </td>
+    <td width="50%" valign="top">
+      <strong>⌘ Approval-driven agent</strong><br />
+      Let the model request bounded workspace tools, with review gates before writes and commands.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>⛨ Guardrails around tools</strong><br />
+      Workspace containment checks, command allow-listing, execution timeouts, and output limits.
+    </td>
+    <td width="50%" valign="top">
+      <strong>◉ Local-first network policy</strong><br />
+      Offline mode restricts R.A.I.N.'s guarded provider requests to recognized loopback hosts.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>≋ Visible activity and audit trail</strong><br />
+      Tool decisions are recorded in a JSON Lines audit log for later inspection.
+    </td>
+    <td width="50%" valign="top">
+      <strong>◇ Lightweight by design</strong><br />
+      No framework or third-party npm runtime packages are required by the current application.
+    </td>
+  </tr>
+</table>
+
+## ◈ Architecture
 
 ```text
-Your browser
-    │
-    ▼
-R.A.I.N. web interface ── local Node.js HTTP server
-                                │
-                                ├── Chat API ── streaming provider adapter
-                                │                    │
-                                │                    ▼
-                                │             Local model server
-                                │
-                                └── Agent API ── model tool calls
-                                                     │
-                                                     ▼
-                                          Workspace tools + approvals
+┌──────────────────────┐
+│    Browser UI        │
+│ Chat · Stream · UI   │
+└──────────┬───────────┘
+           │ HTTP / NDJSON
+           ▼
+┌──────────────────────┐
+│   Node.js server     │
+│ Routes · Validation  │
+│ Limits · Net policy  │
+└──────────┬───────────┘
+           │
+      ┌────┴───────────────┐
+      ▼                    ▼
+┌───────────────┐   ┌────────────────────┐
+│ Model adapter │   │ Agent orchestration│
+│ Chat stream   │   │ Tool loop + review │
+└───────┬───────┘   └─────────┬──────────┘
+        │                     │
+        ▼                     ▼
+┌───────────────┐   ┌────────────────────┐
+│ Local model   │   │ Workspace tools     │
+│ API endpoint  │   │ + approval + audit  │
+└───────────────┘   └────────────────────┘
 ```
 
-The browser communicates with the local Node.js server. The server forwards model requests to the configured model endpoint. In agent mode, the model can request one of four tools; R.A.I.N. validates each request and asks for approval before executing write or command actions (unless write approvals have explicitly been auto-enabled).
+The browser talks to the local Node.js server. The server validates requests and forwards model traffic through the provider adapter. In agent mode, the model can request tools; R.A.I.N. validates each request and gates write and command actions according to the configured approval policy.
 
-R.A.I.N. does not bundle or download a language model. Install and run a model server separately.
+## 🚀 Get started
 
-## Requirements
+### Prerequisites
 
 - **Node.js 18 or newer**
-- A compatible local model server and a model downloaded for that runtime
+- A local model runtime and a model supported by that runtime
 - A modern browser
 
-No `npm install` is needed for the current project because `package.json` defines no third-party dependencies.
+### 1. Start a compatible model server
 
-## Quick start
+Pick one option.
 
-### 1. Start a local model server
+<details>
+  <summary><strong>Option A — Ollama</strong></summary>
 
-Choose one compatible runtime.
-
-**Option A — Ollama**
-
-Install [Ollama](https://ollama.com/) and pull a model:
+Install [Ollama](https://ollama.com/) and download a model:
 
 ```bash
 ollama pull llama3.2
 ```
 
-Start Ollama using its normal service or application workflow. Its default API address is `http://127.0.0.1:11434`.
+Start the Ollama service. Its usual local API address is `http://127.0.0.1:11434`.
+</details>
 
-**Option B — llama.cpp**
+<details>
+  <summary><strong>Option B — llama.cpp</strong></summary>
 
-Start `llama-server` with your own GGUF model:
+Start `llama-server` with a local GGUF model:
 
 ```bash
 llama-server -m /path/to/your-model.gguf --port 8080
 ```
 
-Then configure R.A.I.N. to use `http://127.0.0.1:8080`.
+Use `http://127.0.0.1:8080` as the base URL.
+</details>
 
-**Option C — LM Studio**
+<details>
+  <summary><strong>Option C — LM Studio</strong></summary>
 
-Start a local model and enable its OpenAI-compatible API server. Set `LOCAL_MODEL_URL` to the server's base URL and `LOCAL_MODEL_NAME` to the model identifier accepted by that server.
+Load a model in LM Studio and start its OpenAI-compatible API server. Configure R.A.I.N. with the server's base URL and the model identifier expected by that runtime.
+</details>
 
-### 2. Configure environment variables (optional)
+### 2. Configure R.A.I.N. (optional)
 
-Copy `.env.example` to `.env` in the project root. The defaults are suitable for a typical local Ollama setup, so you can skip this step if your model server uses the default address.
+Copy the example environment file to `.env` in the repository root.
 
-Git Bash / macOS / Linux:
-
+**Git Bash, macOS, or Linux**
 ```bash
 cp .env.example .env
 ```
 
-Windows Command Prompt:
-
+**Windows Command Prompt**
 ```bat
 copy .env.example .env
 ```
 
-Edit `.env` only where your setup differs from the defaults. See [Configuration reference](#configuration-reference).
-
-### 3. Start R.A.I.N.
-
-From the repository root:
-
-```bash
-node src/server.js
-```
-
-Open [http://127.0.0.1:3000](http://127.0.0.1:3000).
-
-The server prints its host, port, network mode, model name, and model URL on startup. Keep the model server running while using R.A.I.N.
-
-### 4. Run the tests
-
-```bash
-npm test
-```
-
-This invokes Node's built-in test runner; no test framework installation is required.
-
-## Configure your model
-
-R.A.I.N.'s provider adapter expects an OpenAI-compatible API with these endpoints:
-
-- `GET /v1/models` — used for the connection status check
-- `POST /v1/chat/completions` — used for chat and agent requests
-
-The configured URL is the **base URL**, not the full chat-completions endpoint. For example:
+The default values target a typical local Ollama setup. If your model server uses another address or model name, update these settings:
 
 ```dotenv
 LOCAL_MODEL_URL=http://127.0.0.1:11434
@@ -152,109 +178,104 @@ LOCAL_MODEL_NAME=llama3.2
 DEFAULT_MODE=offline
 ```
 
-For a llama.cpp server, for example:
+### 3. Launch the application
 
-```dotenv
-LOCAL_MODEL_URL=http://127.0.0.1:8080
-LOCAL_MODEL_NAME=your-model
+From the repository root:
+
+```bash
+node src/server.js
 ```
 
-Use the model identifier your runtime expects. Compatibility varies: a model may chat successfully but not support native tool calling. The agent includes a JSON-in-text fallback for models that do not accept native tool definitions, but results will vary by model.
+Open **http://127.0.0.1:3000** in your browser. Keep your model server running while using the app.
 
-## Using R.A.I.N.
+No `npm install` is needed for the current project: it uses Node.js built-ins and has no third-party runtime dependencies.
 
-### Chat mode
+### 4. Run the tests
 
-1. Start your model server and R.A.I.N.
-2. Open the local web interface.
-3. Confirm the status indicates that the model is reachable.
-4. Enter a message and send it. Responses stream into the conversation.
-5. Use **New chat** to clear the visible conversation and start again.
+```bash
+npm test
+```
 
-Conversation history is stored in the browser's `localStorage`; it is not persisted in a server-side chat database. Browser storage can be cleared by the browser or user.
+This runs the project's tests with Node's built-in test runner.
 
-### Network modes
+## ⚙️ Configure the model
 
-- **Offline** — R.A.I.N.'s network guard permits requests only to recognized loopback hosts such as `127.0.0.1`, `localhost`, and `::1`. This is the default.
-- **Online** — the guard permits requests to non-loopback hosts as well. This enables future or custom network-backed integrations, but does not by itself add a web-search feature to this version.
+R.A.I.N. expects an OpenAI-compatible base URL that provides:
 
-**Important:** Offline mode controls requests made through R.A.I.N.'s guarded provider path. It is not an operating-system firewall and cannot prevent a program you approve in agent mode from making its own network requests.
+- `GET /v1/models` — model connection/status check
+- `POST /v1/chat/completions` — chat and agent requests
 
-## Coding agent and tools
+Set `LOCAL_MODEL_URL` to the **base URL**, not the full chat-completions path. The model identifier in `LOCAL_MODEL_NAME` must match what your runtime accepts.
 
-Enable **Agent (tools)** in the interface to ask R.A.I.N. to work on code in its workspace. The agent follows a bounded loop: request a tool, execute or reject it, return the result to the model, and repeat until the model finishes or the step limit is reached.
+Model compatibility varies. Some models support native tool calls; others may rely on the agent's JSON-in-text fallback. Chat quality, tool reliability, and response speed depend on the selected model, runtime configuration, and hardware.
 
-### Available tools
+## ⌘ Agent workspace
+
+Enable **Agent (tools)** in the interface to use the coding-agent workflow. The agent can request one of the tools below.
 
 | Tool | Purpose | Approval |
-| --- | --- | --- |
-| `list_dir` | List entries in a workspace directory | Not required |
-| `read_file` | Read a UTF-8 text file within the workspace | Not required |
-| `write_file` | Create or overwrite a text file in the workspace | Required by default |
-| `run_command` | Run an allow-listed program with arguments | Always required |
+|---|---|---|
+| `list_dir` | List entries inside the workspace | Not required |
+| `read_file` | Read a UTF-8 text file inside the workspace | Not required |
+| `write_file` | Create or overwrite a text file | Required by default |
+| `run_command` | Execute a permitted program with arguments | Always required |
 
-The agent's workspace defaults to `./workspace` at the project root. It is created automatically when the server starts. Use relative paths in requests.
+The workspace defaults to `./workspace` at the project root and is created when the server starts. Use workspace-relative paths.
 
-### Approval behavior
+### Approval and execution policy
 
-- A pending write or command displays an **Approve / Deny** card in the interface.
-- If no decision is received before `APPROVAL_TIMEOUT_MS`, the action is denied.
-- `AUTO_APPROVE_WRITES=true` skips approval prompts for `write_file` only. **Commands still always require approval.**
-- The agent is limited by `AGENT_MAX_STEPS` and the command timeout/output limits.
-- Tool decisions are appended to `data/audit.log` as JSON Lines. The audit log records tool decisions and summaries, not file contents.
+- Pending writes and commands show an **Approve / Deny** prompt.
+- If approval is not received before `APPROVAL_TIMEOUT_MS`, the action is denied.
+- `AUTO_APPROVE_WRITES=true` bypasses approval for `write_file` only. **Command execution still always requires approval.**
+- `AGENT_MAX_STEPS` and related limits bound the agent loop.
+- Tool decisions are appended to `data/audit.log` in JSON Lines format. The log records tool decisions and summaries, not full file contents.
 
-### Practical guidance
+**Recommended workflow:** ask the agent to inspect the workspace first, review every proposed path and command, and keep backups of files that matter.
 
-- Start by asking the agent to inspect the workspace before making changes.
-- Review the exact file path, content, command, and arguments shown in each approval prompt.
-- Keep important projects and secrets outside the workspace and do not run untrusted code.
-- Back up important files before allowing an agent to overwrite them.
+## 🧩 Configuration reference
 
-## Configuration reference
+All settings are optional. Defaults below reflect the current application configuration and `.env.example`.
 
-All settings are optional. Defaults below reflect the current `.env.example` and application configuration.
-
-| Variable | Default | Description |
-| --- | --- | --- |
-| `HOST` | `127.0.0.1` | Interface address for the HTTP server. Keep loopback for local-only use. |
+| Variable | Default | Purpose |
+|---|---|---|
+| `HOST` | `127.0.0.1` | HTTP server bind address; keep loopback for local-only use. |
 | `PORT` | `3000` | HTTP server port. |
-| `LOCAL_MODEL_URL` | `http://127.0.0.1:11434` | Base URL for the local OpenAI-compatible model server. |
-| `LOCAL_MODEL_NAME` | `llama3.2` | Model identifier sent in API requests. |
+| `LOCAL_MODEL_URL` | `http://127.0.0.1:11434` | Model server base URL. |
+| `LOCAL_MODEL_NAME` | `llama3.2` | Model identifier sent with API requests. |
 | `DEFAULT_MODE` | `offline` | Initial network mode: `offline` or `online`. |
-| `REQUEST_TIMEOUT_MS` | `120000` | Timeout for a chat request. |
-| `RATE_LIMIT_PER_MIN` | `30` | Maximum chat/agent requests per client IP in a rolling minute. |
+| `REQUEST_TIMEOUT_MS` | `120000` | Chat request timeout. |
+| `RATE_LIMIT_PER_MIN` | `30` | Chat/agent request limit per client IP per rolling minute. |
 | `MAX_MESSAGE_CHARS` | `8000` | Maximum characters per message. |
-| `MAX_CONTEXT_CHARS` | `24000` | Approximate character budget for chat context. |
-| `MAX_BODY_BYTES` | `262144` | Maximum JSON request body size in bytes. |
+| `MAX_CONTEXT_CHARS` | `24000` | Approximate chat-context character budget. |
+| `MAX_BODY_BYTES` | `262144` | Maximum JSON request body size. |
 | `MAX_MESSAGES` | `100` | Maximum messages accepted in a request. |
 | `WORKSPACE_DIR` | `./workspace` | Directory accessible to agent tools. Relative values resolve from the process working directory. |
-| `AUTO_APPROVE_WRITES` | `false` | Skip approval prompts for file writes. Commands still require approval. |
-| `ALLOWED_COMMANDS` | `node,python3,python` | Comma-separated program names permitted by `run_command`. |
-| `AGENT_MAX_STEPS` | `8` | Maximum model/tool loop steps per agent task. |
-| `AGENT_MAX_CALLS_PER_STEP` | `4` | Maximum native tool calls handled in one step. |
-| `AGENT_TIMEOUT_MS` | `600000` | Overall agent task timeout. |
-| `APPROVAL_TIMEOUT_MS` | `120000` | Time to wait for a tool approval before denying it. |
+| `AUTO_APPROVE_WRITES` | `false` | Skip approval prompts for file writes only. |
+| `ALLOWED_COMMANDS` | `node,python3,python` | Comma-separated permitted program names. |
+| `AGENT_MAX_STEPS` | `8` | Maximum model/tool loop steps per task. |
+| `AGENT_MAX_CALLS_PER_STEP` | `4` | Maximum native tool calls handled in a step. |
+| `AGENT_MAX_CONTEXT_CHARS` | `60000` | Agent context character budget. |
+| `AGENT_TIMEOUT_MS` | `600000` | Overall agent-task timeout. |
+| `APPROVAL_TIMEOUT_MS` | `120000` | Time to wait for a tool approval. |
 | `COMMAND_TIMEOUT_MS` | `30000` | Maximum runtime for an approved child process. |
-| `MAX_FILE_BYTES` | `200000` | Maximum size for files read or written by tools. |
-| `TOOL_OUTPUT_MAX` | `8000` | Maximum tool output characters passed back to the model. |
-| `CMD_OUTPUT_MAX` | `20000` | Maximum combined command output characters retained. |
+| `MAX_FILE_BYTES` | `200000` | Maximum size of files read or written by tools. |
+| `TOOL_OUTPUT_MAX` | `8000` | Maximum tool-output characters passed to the model. |
+| `CMD_OUTPUT_MAX` | `20000` | Maximum combined command-output characters retained. |
 
-Additional variables such as `AGENT_MAX_CONTEXT_CHARS` and `SYSTEM_PROMPT` are also read by the configuration loader. See `src/config.js` for the full list of supported values and defaults.
+The configuration loader also supports `SYSTEM_PROMPT`. See `src/config.js` for the source of truth.
 
-## HTTP API
+## 🌐 API reference
 
-The local server exposes the following routes:
-
-| Method | Route | Description |
-| --- | --- | --- |
-| `GET` | `/` | Serves the web interface. |
+| Method | Route | Purpose |
+|---|---|---|
+| `GET` | `/` | Serves the browser interface. |
 | `GET` | `/api/health` | Returns mode, model name, and model reachability. |
-| `POST` | `/api/mode` | Changes the current mode. JSON body: `{"mode":"offline"}` or `{"mode":"online"}`. |
-| `POST` | `/api/chat` | Streams a chat response as newline-delimited JSON (NDJSON). |
-| `POST` | `/api/agent` | Runs an agent task and streams tool events and response deltas as NDJSON. |
-| `POST` | `/api/approve` | Resolves a pending tool approval. JSON body: `{"id":"<approval-id>","approve":true}`. |
+| `POST` | `/api/mode` | Changes the active network mode. |
+| `POST` | `/api/chat` | Streams chat response events as newline-delimited JSON (NDJSON). |
+| `POST` | `/api/agent` | Streams agent response, tool, approval, and error events as NDJSON. |
+| `POST` | `/api/approve` | Resolves a pending tool approval. |
 
-Chat and agent requests accept a JSON body shaped like:
+Example chat request:
 
 ```json
 {
@@ -264,106 +285,127 @@ Chat and agent requests accept a JSON body shaped like:
 }
 ```
 
-The final message must be from the user. Supported roles are `user` and `assistant`. Responses from streaming routes consist of one JSON object per line; chat emits `delta` events and a final `done` event, while agent mode can also emit tool-call, tool-result, approval, and error events.
+The final message must be from the user. Supported roles are `user` and `assistant`. Streaming routes emit one JSON object per line; chat responses include `delta` events and a final `done` event.
 
-## Project structure
+## 🗂️ Project structure
 
 ```text
 .
+├── assets/
+│   └── rain-banner.svg     # Repository banner artwork (SVG source)
 ├── public/
-│   ├── index.html       # Chat UI
-│   ├── app.js           # Browser behavior, streaming, approvals, local history
-│   └── style.css        # Responsive interface styling
+│   ├── index.html          # Chat interface
+│   ├── app.js              # Streaming, approvals, and browser history
+│   └── style.css           # Responsive UI styles
 ├── src/
-│   ├── server.js         # HTTP server, API routes, static files, limits and checks
-│   ├── config.js         # Environment loading and configuration
-│   ├── validate.js       # Request validation and context trimming
-│   ├── netguard.js       # Central outbound-request policy
+│   ├── server.js           # HTTP server, routes, and request safeguards
+│   ├── config.js           # Environment loading and configuration
+│   ├── validate.js         # Request validation and context trimming
+│   ├── netguard.js         # Outbound-request policy
 │   ├── providers/
-│   │   └── local.js      # OpenAI-compatible local-model adapter
+│   │   └── local.js        # OpenAI-compatible model adapter
 │   └── agent/
-│       ├── tools.js      # Workspace tools and command execution
-│       ├── loop.js       # Agent loop, tool-call parsing and approvals
-│       └── audit.js      # JSONL audit logging
+│       ├── tools.js        # Workspace tools and command execution
+│       ├── loop.js         # Agent loop and approvals
+│       └── audit.js        # JSONL audit logging
 ├── test/
-│   ├── server.test.js    # Server, validation, network policy and API tests
-│   └── agent.test.js     # Tool and agent behavior tests
-├── data/                 # Runtime settings and audit log
-├── workspace/            # Agent-accessible working directory
-├── .env.example          # Example configuration
+│   ├── server.test.js      # Server, validation, and network tests
+│   └── agent.test.js       # Tool and agent tests
+├── data/                   # Runtime settings and audit log
+├── workspace/              # Agent-accessible workspace
+├── .env.example            # Example environment configuration
 └── package.json
 ```
 
-Runtime files such as settings, audit logs, and workspace content may be created when the application runs.
+Runtime files such as settings, audit logs, and workspace content may be created while the application runs.
 
-## Tests
+## 🧪 Tests
 
-Run the full suite:
+Run the complete test suite:
 
 ```bash
 npm test
 ```
 
-The tests cover request validation, context trimming, offline network policy, streaming responses, invalid requests, host/origin checks, rate limiting, workspace path containment, tool approvals, command allow-listing, timeouts, and child-process environment reduction.
+The existing tests cover request validation, context trimming, offline network policy, streaming responses, invalid requests, host/origin checks, rate limiting, workspace path containment, tool approvals, command allow-listing, timeouts, and child-process environment reduction.
 
-## Security model and limitations
+## ⛨ Security model and limitations
 
-R.A.I.N. includes defense-in-depth measures for a local developer tool, but it is **not a hardened sandbox**.
+R.A.I.N. includes several safeguards for a local developer tool, but **it is not a hardened sandbox**.
 
-- **Approved commands run with your operating-system user's permissions.** The workspace is their working directory, not a security boundary. An approved program may access other files available to your user or use the network.
-- **Offline mode is not a firewall.** It governs R.A.I.N.'s own guarded outbound requests; it cannot constrain code run by an approved command.
-- **Keep the server local.** The default host is `127.0.0.1`. Do not expose it to a public network without additional authentication, access controls, and a security review.
-- **Treat model output as untrusted.** Inspect every proposed write and command before approval. AI-generated commands can be destructive or incorrect.
-- **Protect sensitive data.** Avoid placing credentials, private keys, or production data in the workspace. Child processes receive a reduced environment, but that is not a substitute for OS-level isolation.
-- **Use OS or container isolation for stronger guarantees.** For higher-risk workloads, run R.A.I.N. in a disposable container or under a separate low-privilege operating-system account.
+- **Approved commands run with your OS user's permissions.** The workspace is their working directory, not a security boundary. An approved program may access other files available to that user or make network requests.
+- **Offline mode is not a system firewall.** It governs R.A.I.N.'s guarded outbound requests and cannot constrain a program launched through an approved command.
+- **Keep the server local.** The default host is `127.0.0.1`. Do not expose the server publicly without adding authentication, access controls, and a security review.
+- **Treat model output as untrusted.** Review proposed writes, paths, commands, and arguments. AI-generated actions can be incorrect or destructive.
+- **Protect sensitive information.** Do not put credentials, private keys, or production data in the agent workspace.
+- **Use OS/container isolation for higher-risk tasks.** A disposable container or separate low-privilege account offers stronger separation than application-level checks alone.
 
-The project applies host and origin checks, input limits, request rate limiting, content-security headers, workspace path checks, execution timeouts, output caps, and audit logging. These controls reduce risk; they do not eliminate it.
+The project uses host/origin checks, input limits, rate limiting, content-security headers, workspace path checks, timeouts, output caps, and audit logging. These reduce risk; they do not eliminate it.
 
-## Troubleshooting
+## 🛠️ Troubleshooting
 
-### The interface says “Local model not reachable”
+<details>
+  <summary><strong>“Local model not reachable”</strong></summary>
 
-1. Confirm the model server is running.
-2. Check `LOCAL_MODEL_URL` in `.env` and ensure it is the base URL.
-3. Confirm the configured runtime exposes `/v1/models` and `/v1/chat/completions`.
-4. Check `LOCAL_MODEL_NAME` matches the identifier your runtime accepts.
+  1. Confirm the model server is running.
+  2. Verify `LOCAL_MODEL_URL` is the correct base URL.
+  3. Confirm the runtime exposes `/v1/models` and `/v1/chat/completions`.
+  4. Check that `LOCAL_MODEL_NAME` matches the expected model identifier.
+</details>
 
-### Requests are blocked in offline mode
+<details>
+  <summary><strong>Requests are blocked in offline mode</strong></summary>
 
-Offline mode only allows recognized loopback hostnames. If your model server is on another machine or uses a non-loopback hostname, switch to online mode only if you understand and accept the network implications.
+  Offline mode only permits recognized loopback hostnames. If the model server is on another machine or uses a non-loopback hostname, switch to online mode only if you understand and accept the implications.
+</details>
 
-### Replies are slow or time out
+<details>
+  <summary><strong>Responses are slow or time out</strong></summary>
 
-Model speed depends on hardware, model size, context length, and runtime settings. Try a smaller or more quantized model and reduce the amount of conversation history. Increase `REQUEST_TIMEOUT_MS` only when a longer wait is acceptable.
+  Speed depends on model size, hardware, context length, and runtime settings. Try a smaller or more quantized model, reduce conversation history, or increase `REQUEST_TIMEOUT_MS` when a longer wait is appropriate.
+</details>
 
-### Agent tool calls do not work
+<details>
+  <summary><strong>Agent tool calls are unreliable</strong></summary>
 
-Some local models do not support native tool calling. R.A.I.N. attempts a JSON-in-text fallback, but a model that does not reliably follow the requested format may fail to use tools. Try a stronger coding model with tool-calling support and review the server logs for errors.
+  Some local models do not support native tool calling. The JSON-in-text fallback is model-dependent; try a coding model with reliable tool-use support and review server logs for errors.
+</details>
 
-### The agent cannot access a path
+<details>
+  <summary><strong>The agent cannot access a path</strong></summary>
 
-Agent paths must remain inside `WORKSPACE_DIR`. Absolute paths, parent-directory traversal, and symlink escapes are rejected intentionally. Move or copy the files you want to work on into the workspace.
+  Paths must remain inside `WORKSPACE_DIR`. Absolute paths, parent-directory traversal, and symlink escapes are rejected intentionally. Place files the agent needs inside the configured workspace.
+</details>
 
-### Port 3000 is already in use
+<details>
+  <summary><strong>Port 3000 is already in use</strong></summary>
 
-Set a different port in `.env`, for example `PORT=3001`, restart the server, and open the matching local URL.
+  Set a different port in `.env`, such as `PORT=3001`, restart the server, and open the corresponding local URL.
+</details>
 
-## Roadmap ideas
+## 🧭 Potential next steps
 
-Potential directions for future development—not promises of existing functionality:
+These are possible future directions, not claims of existing functionality:
 
-- More provider adapters behind the same provider interface
+- Additional provider adapters behind the same interface
 - Clearer task history and agent-session controls
-- Additional automated security and compatibility tests
+- Expanded automated security and compatibility tests
 - Optional isolated command execution through containers
-- Explicitly designed integrations for retrieval or web access
+- Explicitly designed retrieval or web-access integrations
 
-## Contributing
+## 🤝 Contributing
 
-Issues, bug reports, and focused pull requests are welcome. When reporting a problem, include your Node.js version, operating system, model runtime, relevant configuration with secrets removed, and the steps needed to reproduce it.
+Bug reports, issues, and focused pull requests are welcome. For reproducible reports, include your Node.js version, operating system, model runtime, relevant configuration with secrets removed, and steps to reproduce the issue.
 
-For changes involving agent tools or network behavior, please include tests and document any new security assumptions.
+Changes involving agent tools, command execution, or network behavior should include tests and document any new security assumptions.
 
-## License
+## 📄 License
 
-No license file was found during this README review. Until a license is added to the repository, do not assume that the code is available for unrestricted reuse. If you intend to publish or accept contributions, add an appropriate `LICENSE` file.
+No `LICENSE` file was identified during this README review. Until a license is added, do not assume the code is available for unrestricted reuse. If you intend to publish the project for reuse or accept outside contributions, add an appropriate license.
+
+---
+
+<p align="center">
+  <strong>R.A.I.N.</strong><br />
+  <sub>Local-first by default. Transparent by design. Human approval in the loop.</sub>
+</p>
