@@ -3,31 +3,68 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="R.A.I.N. - local-first chat and coding agent">
   <title>R.A.I.N.</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css">
 </head>
-<body>
+<body data-net="offline">
   <header>
-    <h1>R.A.I.N.</h1>
+    <div class="brand">
+      <span class="logo" id="logo" aria-hidden="true"></span>
+      <h1>R.A.I.N.</h1>
+    </div>
+
     <div class="controls">
-      <span id="status" class="status" role="status" aria-live="polite">Checking…</span>
-      <label class="sr-only" for="mode">Network mode</label>
-      <select id="mode">
-        <option value="offline">Offline (no network)</option>
-        <option value="online">Online (network allowed)</option>
-      </select>
-      <label class="agent-toggle"><input type="checkbox" id="agent"> Agent (tools)</label>
-      <button id="clear" type="button">New chat</button>
+      <span id="status" class="pill" role="status" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span><span id="status-text">Checking…</span>
+      </span>
+
+      <div class="seg" role="group" aria-label="Network mode">
+        <button type="button" data-mode="offline" aria-pressed="true" title="Only localhost requests are allowed">Offline</button>
+        <button type="button" data-mode="online" aria-pressed="false" title="Allows the agent to read public web pages (you approve each fetch)">Online</button>
+      </div>
+
+      <label class="switch" title="Let the model read, write and run code in its workspace folder (and read web pages in Online mode). You approve every action.">
+        <input type="checkbox" id="agent">
+        <span class="track" aria-hidden="true"></span>
+        <span class="switch-label">Agent</span>
+      </label>
+
+      <span class="divider" aria-hidden="true"></span>
+
+      <button id="export" type="button" class="btn icon-only" title="Export chat as Markdown" aria-label="Export chat as Markdown"></button>
+      <button id="theme" type="button" class="btn icon-only" title="Toggle light / dark theme" aria-label="Toggle theme"></button>
+      <button id="clear" type="button" class="btn primary-ghost" title="New chat (Ctrl/Cmd+K)"><span class="lbl">New chat</span></button>
     </div>
   </header>
-  <main id="log" aria-live="polite" aria-label="Conversation"></main>
-  <div id="error" class="error" role="alert" hidden></div>
+
+  <div id="error" class="banner" role="alert" hidden>
+    <span id="error-msg"></span>
+    <button id="error-close" type="button" class="btn icon-only" aria-label="Dismiss"></button>
+  </div>
+
+  <div class="stage">
+    <main id="log" aria-label="Conversation">
+      <div id="thread" aria-live="polite"></div>
+    </main>
+    <button id="jump" type="button" class="jump" hidden aria-label="Scroll to latest"></button>
+  </div>
+
   <form id="form" autocomplete="off">
-    <label class="sr-only" for="input">Message</label>
-    <textarea id="input" rows="1" maxlength="8000" placeholder="Message R.A.I.N. (Enter to send, Shift+Enter for a new line)"></textarea>
-    <button id="send" type="submit">Send</button>
-    <button id="stop" type="button" hidden>Stop</button>
+    <div class="composer">
+      <div id="agent-note" class="agent-note" hidden></div>
+      <label class="sr-only" for="input">Message</label>
+      <textarea id="input" rows="1" maxlength="8000" placeholder="Message R.A.I.N."></textarea>
+      <div class="composer-bar">
+        <span class="hint"><kbd>Enter</kbd> send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line · <kbd>Esc</kbd> stop</span>
+        <span id="count" class="count" hidden></span>
+        <button id="send" type="submit" class="send" aria-label="Send message" title="Send" disabled></button>
+        <button id="stop" type="button" class="send stop" aria-label="Stop generating" title="Stop (Esc)" hidden></button>
+      </div>
+    </div>
   </form>
+
   <script src="/app.js"></script>
 </body>
 </html>

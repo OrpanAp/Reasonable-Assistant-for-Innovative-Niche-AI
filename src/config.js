@@ -33,7 +33,7 @@ function load(overrides = {}) {
     // --- Phase 2: agent ---
     workspaceDir: path.resolve(e.WORKSPACE_DIR || path.join(__dirname, '..', 'workspace')),
     auditFile: path.join(__dirname, '..', 'data', 'audit.log'),
-    agentMaxSteps: int('AGENT_MAX_STEPS', 8),
+    agentMaxSteps: int('AGENT_MAX_STEPS', 12),
     agentMaxCallsPerStep: int('AGENT_MAX_CALLS_PER_STEP', 4),
     agentMaxContextChars: int('AGENT_MAX_CONTEXT_CHARS', 60000),
     agentTimeoutMs: int('AGENT_TIMEOUT_MS', 600000),
@@ -44,6 +44,11 @@ function load(overrides = {}) {
     maxFileBytes: int('MAX_FILE_BYTES', 200000),
     toolOutputMax: int('TOOL_OUTPUT_MAX', 8000),
     cmdOutputMax: int('CMD_OUTPUT_MAX', 20000),
+    // --- Online mode: agent web access ---
+    autoApproveFetch: String(e.AUTO_APPROVE_FETCH || '').toLowerCase() === 'true',
+    fetchTimeoutMs: int('FETCH_TIMEOUT_MS', 15000),
+    fetchMaxBytes: int('FETCH_MAX_BYTES', 1000000),
+    fetchAllowPrivate: String(e.FETCH_ALLOW_PRIVATE || '').toLowerCase() === 'true', // testing only; lets fetch_url reach localhost/LAN
   };
 }
 
